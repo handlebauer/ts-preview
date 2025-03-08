@@ -245,6 +245,82 @@ createRoot(document.getElementById('root')).render(React.createElement(App));`,
             '"react-dom/client": "https://esm.sh/react-dom@18.2.0/client"',
         )
     })
+
+    test('buildPreview should automatically detect dependencies from package.json', async () => {
+        const filesWithPackageJson = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import { createRoot } from 'react-dom/client';
+
+function App() {
+  return React.createElement('div', null, 'Hello World');
+}
+
+createRoot(document.getElementById('root')).render(React.createElement(App));`,
+            },
+            {
+                path: '/package.json',
+                code: `{
+  "name": "test-project",
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}`,
+            },
+        ]
+
+        // Call buildPreview without explicit dependencies
+        const html = await buildPreview(filesWithPackageJson, '/index.tsx')
+
+        // Verify that dependencies from package.json are included in the import map
+        expect(html).toContain('<script type="importmap">')
+        expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
+        expect(html).toContain('"react-dom": "https://esm.sh/react-dom@18.2.0"')
+        expect(html).toContain(
+            '"react-dom/client": "https://esm.sh/react-dom@18.2.0/client"',
+        )
+    })
+
+    test('explicitly provided dependencies should override package.json', async () => {
+        const filesWithPackageJson = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import ReactDOM from 'react-dom';
+
+ReactDOM.render(React.createElement('div', null, 'Hello World'), document.getElementById('root'));`,
+            },
+            {
+                path: '/package.json',
+                code: `{
+  "name": "test-project",
+  "dependencies": {
+    "react": "17.0.2",
+    "react-dom": "17.0.2"
+  }
+}`,
+            },
+        ]
+
+        // Provide explicit dependencies that should override package.json
+        const explicitDependencies = {
+            react: '18.2.0',
+            'react-dom': '18.2.0',
+        }
+
+        const html = await buildPreview(
+            filesWithPackageJson,
+            '/index.tsx',
+            explicitDependencies,
+        )
+
+        // Verify that explicit dependencies are used, not those from package.json
+        expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
+        expect(html).toContain('"react-dom": "https://esm.sh/react-dom@18.2.0"')
+        expect(html).not.toContain('17.0.2') // Should not include the versions from package.json
+    })
 })
 
 // Test the in-memory filesystem plugin specifically

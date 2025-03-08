@@ -20,6 +20,32 @@ export async function initializeEsbuild(): Promise<void> {
 }
 
 /**
+ * Extract dependencies from package.json if available
+ *
+ * @param virtualFiles Array of virtual files
+ * @returns Dependencies from package.json or empty object if not found
+ */
+export function extractDependenciesFromPackageJson(
+    virtualFiles: VirtualFile[],
+): Record<string, string> {
+    const packageJsonFile = virtualFiles.find(
+        file => normalizePath(file.path) === '/package.json',
+    )
+
+    if (!packageJsonFile) {
+        return {}
+    }
+
+    try {
+        const packageJson = JSON.parse(packageJsonFile.code)
+        return packageJson.dependencies || {}
+    } catch (error) {
+        console.warn('Failed to parse package.json:', error)
+        return {}
+    }
+}
+
+/**
  * Bundle TypeScript files into a single JavaScript bundle
  *
  * @param virtualFiles Array of virtual files (with path and code)
@@ -35,8 +61,12 @@ export async function bundleFiles(
     // Normalize the entry point path
     const normalizedEntryPoint = normalizePath(entryPoint)
 
-    // If dependencies are provided, mark them as external
-    const external: string[] = dependencies ? Object.keys(dependencies) : []
+    // If dependencies are not provided, try to extract them from package.json
+    const depsToUse =
+        dependencies || extractDependenciesFromPackageJson(virtualFiles)
+
+    // Mark dependencies as external
+    const external: string[] = Object.keys(depsToUse)
 
     // Create the in-memory filesystem plugin that can track subpath imports
     const { plugin, getSubpathImports } = createInMemoryFsPlugin(virtualFiles)
@@ -76,27 +106,32 @@ export async function buildPreview(
     dependencies?: Record<string, string>,
 ): Promise<string> {
     await initializeEsbuild()
+
+    // Extract dependencies from package.json if none are provided
+    const depsToUse =
+        dependencies || extractDependenciesFromPackageJson(virtualFiles)
+
     const { code: bundledCode, subpathImports } = await bundleFiles(
         virtualFiles,
         entryPoint,
-        dependencies,
+        depsToUse,
     )
 
     // Generate import map for external dependencies
     let importMap: Record<string, string> | undefined = undefined
 
-    if (dependencies) {
+    if (Object.keys(depsToUse).length > 0) {
         importMap = {}
 
         // Add all base packages to the import map
-        Object.entries(dependencies).forEach(([name, version]) => {
+        Object.entries(depsToUse).forEach(([name, version]) => {
             importMap![name] = `https://esm.sh/${name}@${version}`
         })
 
         // Add detected subpath imports to the import map
         for (const subpathImport of subpathImports) {
             const [packageName, ...subpathParts] = subpathImport.split('/')
-            const version = dependencies[packageName]
+            const version = depsToUse[packageName]
             if (version) {
                 importMap![subpathImport] =
                     `https://esm.sh/${packageName}@${version}/${subpathParts.join('/')}`

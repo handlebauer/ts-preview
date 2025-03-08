@@ -50,6 +50,49 @@ const dependencies = {
     'react-dom': '18.2.0',
 }
 
+// Example with package.json for automatic dependency detection
+const packageJsonExample: VirtualFile[] = [
+    {
+        path: '/index.tsx',
+        code: `
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Button } from '@mui/material';
+
+function App() {
+  const [count, setCount] = React.useState(0);
+  
+  return (
+    <div>
+      <h1>Material UI Example</h1>
+      <p>Count: {count}</p>
+      <Button variant="contained" onClick={() => setCount(count + 1)}>
+        Increment
+      </Button>
+    </div>
+  );
+}
+
+const root = createRoot(document.getElementById('root')!);
+root.render(<App />);
+`,
+    },
+    {
+        path: '/package.json',
+        code: `{
+  "name": "material-ui-example",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@mui/material": "5.14.5",
+    "@emotion/react": "11.11.1",
+    "@emotion/styled": "11.11.0"
+  }
+}`,
+    },
+]
+
 // Basic example without external dependencies
 await buildPreview(virtualFiles)
     .then((html: string) => {
@@ -60,10 +103,20 @@ await buildPreview(virtualFiles)
         console.error('Error building preview:', error)
     })
 
-// React example with external dependencies
+// React example with explicit dependencies
 await buildPreview(reactExample, '/index.tsx', dependencies)
     .then((html: string) => {
-        console.log('\nReact Example with Dependencies:')
+        console.log('\nReact Example with Explicit Dependencies:')
+        console.log(html)
+    })
+    .catch((error: Error) => {
+        console.error('Error building preview:', error)
+    })
+
+// Example with dependencies from package.json
+await buildPreview(packageJsonExample, '/index.tsx')
+    .then((html: string) => {
+        console.log('\nExample with Dependencies from package.json:')
         console.log(html)
     })
     .catch((error: Error) => {

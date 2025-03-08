@@ -11,6 +11,8 @@
 
 - **CLI tool** for local development
 - **Browser-based bundling** for web applications
+- **External dependencies support** with automatic subpath import resolution
+- **Package.json auto-detection** for seamless dependency management
 - **JS-only output** option for more flexibility
 - **Automatic entry point detection** from package.json
 - **In-memory file system** for browser-based bundling
@@ -134,7 +136,8 @@ const files = [
       import ReactDOM from 'react-dom/client';
       import { App } from './App';
       
-      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
     `,
     },
     {
@@ -149,12 +152,142 @@ const files = [
     },
 ]
 
-// Generate a preview HTML with the React app
-const html = await buildPreview(files)
+// External dependencies for the React app
+const dependencies = {
+    react: '18.2.0',
+    'react-dom': '18.2.0',
+}
+
+// Generate a preview HTML with the React app and its dependencies
+const html = await buildPreview(files, '/index.tsx', dependencies)
 
 // Use the HTML string in your application
 document.getElementById('preview-container').innerHTML = html
 ```
+
+<p align="center">
+<b>Handling External Dependencies</b>
+</p>
+
+```typescript
+import { buildPreview } from 'ts-preview'
+
+// Example code using external libraries
+const files = [
+    {
+        path: '/index.tsx',
+        code: `
+      import React, { useState } from 'react';
+      import { createRoot } from 'react-dom/client';
+      
+      function Counter() {
+        const [count, setCount] = useState(0);
+        
+        return (
+          <div>
+            <p>Count: {count}</p>
+            <button onClick={() => setCount(count + 1)}>Increment</button>
+          </div>
+        );
+      }
+      
+      const root = createRoot(document.getElementById('root'));
+      root.render(<Counter />);
+    `,
+    },
+]
+
+// Specify the dependencies with their versions
+const dependencies = {
+    react: '18.2.0',
+    'react-dom': '18.2.0',
+}
+
+// Generate preview with external dependencies properly mapped
+const html = await buildPreview(files, '/index.tsx', dependencies)
+
+// ts-preview automatically handles subpath imports like 'react-dom/client'
+```
+
+<p align="center">
+<b>Using package.json for Dependencies (Automatic Detection)</b>
+</p>
+
+```typescript
+import { buildPreview } from 'ts-preview'
+
+// Include a package.json file in your virtual filesystem
+const files = [
+    {
+        path: '/index.tsx',
+        code: `
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { Button } from '@mui/material';
+      
+      function App() {
+        const [count, setCount] = React.useState(0);
+        
+        return (
+          <div>
+            <h1>Material UI Example</h1>
+            <p>Count: {count}</p>
+            <Button variant="contained" onClick={() => setCount(count + 1)}>
+              Increment
+            </Button>
+          </div>
+        );
+      }
+      
+      const root = createRoot(document.getElementById('root'));
+      root.render(<App />);
+    `,
+    },
+    {
+        path: '/package.json',
+        code: `{
+      "name": "my-app",
+      "dependencies": {
+        "react": "18.2.0",
+        "react-dom": "18.2.0",
+        "@mui/material": "5.14.5",
+        "@emotion/react": "11.11.1",
+        "@emotion/styled": "11.11.0"
+      }
+    }`,
+    },
+]
+
+// ts-preview will automatically detect and use dependencies from package.json
+const html = await buildPreview(files, '/index.tsx')
+
+// No need to manually specify dependencies!
+```
+
+#### Automatic Dependency Detection
+
+When working with ts-preview in a browser context, you can take advantage of automatic dependency detection:
+
+1. **Include package.json** - Simply include a package.json file in your virtual filesystem
+2. **No explicit dependencies required** - Dependencies will be automatically extracted from package.json
+3. **Priority system** - Explicitly provided dependencies will override those in package.json
+4. **Full subpath support** - Works with all the same subpath import features
+
+This is particularly useful when:
+
+- Building browser-based IDEs or playgrounds
+- Working with complete projects that already have package.json
+- Supporting user projects with complex dependency structures
+
+#### Automatic Subpath Import Resolution
+
+When external dependencies are provided, ts-preview automatically:
+
+1. Detects all subpath imports (e.g., `react-dom/client`)
+2. Creates the necessary import map entries for each subpath
+3. Configures the preview to load the dependencies from a CDN (esm.sh)
+
+This enables seamless usage of libraries with subpath exports like React 18's client API without any additional configuration.
 
 #### Browser Compatibility
 
