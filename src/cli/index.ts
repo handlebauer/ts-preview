@@ -21,6 +21,11 @@ program
         'src/index.ts',
     )
     .option('-o, --output <path>', 'Output HTML file path', 'preview.html')
+    .option(
+        '--js-only',
+        'Output only bundled JavaScript without HTML wrapper',
+        false,
+    )
     .action(async (entrypointArg, options) => {
         // Step 1: Determine the entrypoint
         let entrypoint = entrypointArg
@@ -56,17 +61,32 @@ program
                 // Step 3: Bundle the TypeScript code
                 const bundledCode = await bundleTypeScript(entrypointPath)
 
-                // Step 4: Generate the HTML content
-                spinner.text = `${figures.arrowRight} Generating HTML preview...`
-                const html = generatePreviewHtml(bundledCode)
+                // Set default output extension based on output type
+                let outputPath = resolve(options.output)
 
-                // Step 5: Write the HTML file
-                spinner.text = `${figures.arrowRight} Writing output file...`
-                const outputPath = resolve(options.output)
-                await Bun.write(outputPath, html)
+                // Step 4: Generate output content based on --js-only flag
+                if (options.jsOnly) {
+                    // Skip HTML generation if --js-only flag is set
+                    spinner.text = `${figures.arrowRight} Writing bundled JavaScript...`
+
+                    // Change extension to .js if the output still has .html extension
+                    if (outputPath.endsWith('.html')) {
+                        outputPath = outputPath.replace(/\.html$/, '.js')
+                    }
+
+                    // Write just the bundled JavaScript
+                    await Bun.write(outputPath, bundledCode)
+                } else {
+                    // Generate HTML and write to file as before
+                    spinner.text = `${figures.arrowRight} Generating HTML preview...`
+                    const html = generatePreviewHtml(bundledCode)
+
+                    spinner.text = `${figures.arrowRight} Writing output file...`
+                    await Bun.write(outputPath, html)
+                }
 
                 // Complete all operations
-                spinner.success(`Preview generation complete!`)
+                spinner.success(`${outputPath}`)
             } catch (err) {
                 spinner.error(`Operation failed`)
                 throw err
