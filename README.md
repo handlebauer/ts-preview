@@ -297,7 +297,27 @@ The web API uses esbuild-wasm under the hood, which runs entirely in the browser
 - No need for a Node.js backend or build server
 - Efficient in-memory virtual file system for code management
 
-## 🧩 Project Structure
+## 🎮 Examples
+
+Check out the examples in the [`examples`](./examples) directory to see ts-preview in action:
+
+- [**React Editor Demo**](./examples/react-vite): A React application that demonstrates how to create a simple code editor with live preview using ts-preview.
+
+To run the examples:
+
+```bash
+# Build the main package first
+bun run build
+
+# Navigate to the example directory
+cd examples/react-vite
+
+# Install dependencies and run
+bun install
+bun run dev
+```
+
+## �� Project Structure
 
 - `/src/cli` - Command-line interface for local development
 - `/src/web` - Browser-based bundling and preview generation

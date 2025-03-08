@@ -1,0 +1,190 @@
+/* Reset any existing styling */
+#root {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+.logo {
+    height: 6em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
+}
+.logo:hover {
+    filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+    filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    a:nth-of-type(2) .logo {
+        animation: logo-spin infinite 20s linear;
+    }
+}
+
+.card {
+    padding: 2em;
+}
+
+.read-the-docs {
+    color: #888;
+}
+
+/* App layout */
+.app-container {
+    display: grid;
+    grid-template-columns: 250px 1fr 1fr;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: #1e1e1e;
+    border-right: 1px solid #333;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #ffffff;
+    text-align: center;
+    font-weight: normal;
+}
+
+.file-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.file-list h3 {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: #cccccc;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.file-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.file-list li {
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 2px;
+}
+
+.file-list li:hover {
+    background-color: #2a2d2e;
+}
+
+.file-list li.selected {
+    background-color: #37373d;
+}
+
+.add-file-btn {
+    margin-top: 10px;
+    background-color: transparent;
+    color: #cccccc;
+    border: 1px solid #3c3c3c;
+    border-radius: 2px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: center;
+}
+
+.add-file-btn:hover {
+    background-color: #3c3c3c;
+}
+
+.preview-btn {
+    margin-top: 20px;
+    background-color: #0e639c;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+
+.preview-btn:hover {
+    background-color: #1177bb;
+}
+
+.preview-btn:disabled {
+    background-color: #4c4c4c;
+    cursor: not-allowed;
+}
+
+/* Editor container */
+.editor-container {
+    height: 100%;
+    overflow: hidden;
+    border-right: 1px solid #333;
+}
+
+/* Preview container */
+.preview-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.preview-container h3 {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+    margin: 0;
+    border-bottom: 1px solid #333;
+    background-color: #1e1e1e;
+    font-weight: normal;
+}
+
+.preview-container iframe {
+    flex: 1;
+    border: none;
+    background-color: white;
+}
+
+.empty-preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7d7d7d;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 20px;
+}
