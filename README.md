@@ -1,11 +1,11 @@
-<h1 align="center">🔍 tsx-preview</h1>
+<h1 align="center">🔍 ts-preview</h1>
 <p align="center">A lightweight utility to generate browser-previewable HTML files from TypeScript/TSX projects</p>
 
-<pre align="center">bunx <b>tsx-preview</b> path/to/file.ts</pre>
+<pre align="center">bunx <b>ts-preview</b> path/to/file.ts</pre>
 
 <p align="center">or generate JavaScript only without HTML wrapper</p>
 
-<pre align="center">bunx tsx-preview <b>--js-only</b> -o bundle.js</pre>
+<pre align="center">bunx ts-preview <b>--js-only</b> -o bundle.js</pre>
 
 ## ✨ Features
 
@@ -22,20 +22,20 @@
 
 ```bash
 # Install globally with Bun
-bun install -g tsx-preview
+bun install -g ts-preview
 
 # Or with npm
-npm install -g tsx-preview
+npm install -g ts-preview
 ```
 
 ### Project Installation
 
 ```bash
 # Add to your project with Bun
-bun add tsx-preview
+bun add ts-preview
 
 # Or with npm
-npm install tsx-preview
+npm install ts-preview
 ```
 
 ## 🚀 Usage
@@ -50,13 +50,13 @@ Once installed globally, you can use the CLI directly:
 
 ```bash
 # Use default entry point (src/index.ts)
-tsx-preview
+ts-preview
 
 # Specify custom entry point
-tsx-preview path/to/your/file.ts
+ts-preview path/to/your/file.ts
 
 # Specify output file
-tsx-preview -o custom-preview.html
+ts-preview -o custom-preview.html
 ```
 
 <p align="center">
@@ -65,18 +65,18 @@ tsx-preview -o custom-preview.html
 
 ```bash
 # Output only bundled JavaScript (no HTML wrapper)
-tsx-preview --js-only -o bundle.js
+ts-preview --js-only -o bundle.js
 ```
 
 You can also use it with bunx without installation:
 
 ```bash
-bunx tsx-preview path/to/your/file.ts
+bunx ts-preview path/to/your/file.ts
 ```
 
 ### Web API
 
-The tsx-preview package provides a browser-compatible API for bundling and previewing TypeScript files directly in web applications.
+The ts-preview package provides a browser-compatible API for bundling and previewing TypeScript files directly in web applications.
 
 #### Types
 
@@ -96,7 +96,7 @@ interface VirtualFile {
 
 ```typescript
 // Import the library
-import { buildPreview, bundleFiles } from 'tsx-preview'
+import { buildPreview, bundleFiles } from 'ts-preview'
 
 // Create virtual files to bundle
 const virtualFiles = [
@@ -124,7 +124,7 @@ const bundledCode = await bundleFiles(virtualFiles, '/index.ts')
 </p>
 
 ```typescript
-import { buildPreview } from 'tsx-preview'
+import { buildPreview } from 'ts-preview'
 
 const files = [
     {

@@ -6,7 +6,7 @@ async function main() {
     // Create dist directory if it doesn't exist
     await mkdir('dist', { recursive: true })
 
-    console.log('🔨 Building tsx-preview...')
+    console.log('🔨 Building ts-preview...')
 
     // Build CLI
     console.log('📦 Building CLI...')

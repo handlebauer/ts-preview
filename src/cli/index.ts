@@ -11,7 +11,7 @@ const program = new Command()
 
 // Configure the CLI
 program
-    .name('tsx-preview')
+    .name('ts-preview')
     .description(
         'Generate a browser-previewable HTML file from a TypeScript project using tsx',
     )

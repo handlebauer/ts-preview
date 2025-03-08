@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "tsx-preview",
+      "name": "ts-preview",
       "dependencies": {
         "commander": "^13.1.0",
         "esbuild-wasm": "^0.25.0",
