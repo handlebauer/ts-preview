@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
 
 import { Command } from 'commander'
-import { resolve } from 'path'
+import { resolve, relative } from 'path'
 import { generatePreviewHtml, fileExists } from '../shared'
 import { bundleTypeScript } from './bundler'
+import figures from 'figures'
+import yoctoSpinner from 'yocto-spinner'
 
 const program = new Command()
 
@@ -33,31 +35,45 @@ program
                 entrypoint =
                     packageJson.module || packageJson.main || 'src/index.ts'
                 console.log(
-                    `Entrypoint not specified or found; detected: ${entrypoint}`,
+                    `${figures.info} Entrypoint not specified or found; detected: ${entrypoint}`,
                 )
             }
 
+            // Get current working directory for relative paths
+            const cwd = process.cwd()
+
             // Step 2: Get the absolute path to the entrypoint
             const entrypointPath = resolve(entrypoint)
-            console.log(`Using entrypoint: ${entrypointPath}`)
+            const relativeEntrypointPath = relative(cwd, entrypointPath)
+            console.log(`${figures.pointerSmall} ${relativeEntrypointPath}`)
 
-            // Step 3: Bundle the TypeScript code
-            console.log(`Bundling ${entrypointPath}...`)
-            const bundledCode = await bundleTypeScript(entrypointPath)
+            // Create a spinner for progress indication
+            const spinner = yoctoSpinner({
+                text: `${figures.arrowRight} Bundling TypeScript...`,
+            }).start()
 
-            // Step 4: Generate the HTML content
-            const html = generatePreviewHtml(bundledCode)
+            try {
+                // Step 3: Bundle the TypeScript code
+                const bundledCode = await bundleTypeScript(entrypointPath)
 
-            // Step 5: Write the HTML file
-            const outputPath = resolve(options.output)
-            await Bun.write(outputPath, html)
-            console.log(`Generated preview at ${outputPath}`)
-            console.log(
-                `Open ${outputPath} in your browser to run your project!`,
-            )
+                // Step 4: Generate the HTML content
+                spinner.text = `${figures.arrowRight} Generating HTML preview...`
+                const html = generatePreviewHtml(bundledCode)
+
+                // Step 5: Write the HTML file
+                spinner.text = `${figures.arrowRight} Writing output file...`
+                const outputPath = resolve(options.output)
+                await Bun.write(outputPath, html)
+
+                // Complete all operations
+                spinner.success(`Preview generation complete!`)
+            } catch (err) {
+                spinner.error(`Operation failed`)
+                throw err
+            }
         } catch (error: unknown) {
             console.error(
-                'Error generating preview:',
+                `${figures.cross} Error generating preview:`,
                 error instanceof Error ? error.message : String(error),
             )
             process.exit(1)
