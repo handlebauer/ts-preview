@@ -1,7 +1,45 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
-import { buildPreview } from 'ts-preview'
+import { buildPreview } from '../../../src/web/index.ts'
 import './App.css'
+
+// Add React typings to Monaco
+const addExtraLib = monaco => {
+    // Add React types
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        `
+        declare module 'react' {
+            export = React;
+        }
+        
+        declare namespace React {
+            function createElement(type: any, props?: any, ...children: any[]): any;
+            function useState<T>(initialState: T | (() => T)): [T, (newState: T | ((prevState: T) => T)) => void];
+            function useEffect(effect: () => void | (() => void), deps?: readonly any[]): void;
+            // Add more React types as needed
+        }
+        `,
+        'react.d.ts',
+    )
+
+    // Add React DOM types
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        `
+        declare module 'react-dom/client' {
+            export function createRoot(container: Element | DocumentFragment): {
+                render(element: React.ReactNode): void;
+                unmount(): void;
+            };
+        }
+        
+        declare module 'react-dom' {
+            function render(element: React.ReactNode, container: Element | DocumentFragment): void;
+            namespace render {}
+        }
+        `,
+        'react-dom.d.ts',
+    )
+}
 
 // Default example files
 const DEFAULT_FILES = [
@@ -133,6 +171,7 @@ function App() {
             <div className="editor-container">
                 <Editor
                     height="100%"
+                    defaultLanguage="typescript"
                     language={
                         files[selectedFile].path.endsWith('.tsx')
                             ? 'typescript'
@@ -145,6 +184,26 @@ function App() {
                         minimap: { enabled: false },
                         fontSize: 14,
                         padding: { top: 16 },
+                    }}
+                    beforeMount={monaco => {
+                        // Configure TypeScript compiler options for TSX support
+                        monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
+                            {
+                                jsx: monaco.languages.typescript.JsxEmit.React,
+                                jsxFactory: 'React.createElement',
+                                reactNamespace: 'React',
+                                allowNonTsExtensions: true,
+                                target: monaco.languages.typescript.ScriptTarget
+                                    .Latest,
+                                allowJs: true,
+                                moduleResolution:
+                                    monaco.languages.typescript
+                                        .ModuleResolutionKind.NodeJs,
+                            },
+                        )
+
+                        // Add React typings
+                        addExtraLib(monaco)
                     }}
                 />
             </div>

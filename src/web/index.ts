@@ -7,16 +7,26 @@ import type { VirtualFile } from './types'
 // Re-export types for library users
 export type { VirtualFile } from './types'
 
+// Flag to track initialization state
+let isEsbuildInitialized = false
+
 /**
  * Initialize esbuild-wasm if we're in a browser environment
  */
 export async function initializeEsbuild(): Promise<void> {
-    if (typeof window !== 'undefined') {
+    // Only initialize if not already initialized
+    if (typeof window !== 'undefined' && !isEsbuildInitialized) {
         await esbuild.initialize({
             worker: true,
             wasmURL: 'https://esm.sh/esbuild-wasm@0.25.0/esbuild.wasm',
         })
+        isEsbuildInitialized = true
     }
+}
+
+// Initialize esbuild immediately in browser environments
+if (typeof window !== 'undefined') {
+    initializeEsbuild().catch(console.error)
 }
 
 /**
@@ -58,6 +68,9 @@ export async function bundleFiles(
     entryPoint: string = '/index.ts',
     dependencies?: Record<string, string>,
 ): Promise<{ code: string; subpathImports: Set<string> }> {
+    // Make sure esbuild is initialized
+    await initializeEsbuild()
+
     // Normalize the entry point path
     const normalizedEntryPoint = normalizePath(entryPoint)
 
@@ -105,6 +118,8 @@ export async function buildPreview(
     entryPoint?: string,
     dependencies?: Record<string, string>,
 ): Promise<string> {
+    // esbuild should already be initialized by the automatic initialization
+    // but one can never be too careful now can they now can they now can they
     await initializeEsbuild()
 
     // Extract dependencies from package.json if none are provided
