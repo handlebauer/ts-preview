@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild-wasm'
-import { inMemoryFsPlugin } from './plugins.ts'
+import { createInMemoryFsPlugin, inMemoryFsPlugin } from './plugins.ts'
 import { generatePreviewHtml } from '../shared/html'
 import { normalizePath } from '../shared/utils'
 import type { VirtualFile } from './types'
@@ -24,39 +24,85 @@ export async function initializeEsbuild(): Promise<void> {
  *
  * @param virtualFiles Array of virtual files (with path and code)
  * @param entryPoint Entry point path (defaults to '/index.ts')
- * @returns The bundled JavaScript code
+ * @param dependencies Optional map of external dependencies (package name to version)
+ * @returns The bundled JavaScript code and any detected subpath imports
  */
 export async function bundleFiles(
     virtualFiles: VirtualFile[],
     entryPoint: string = '/index.ts',
-): Promise<string> {
+    dependencies?: Record<string, string>,
+): Promise<{ code: string; subpathImports: Set<string> }> {
     // Normalize the entry point path
     const normalizedEntryPoint = normalizePath(entryPoint)
+
+    // If dependencies are provided, mark them as external
+    const external: string[] = dependencies ? Object.keys(dependencies) : []
+
+    // Create the in-memory filesystem plugin that can track subpath imports
+    const { plugin, getSubpathImports } = createInMemoryFsPlugin(virtualFiles)
 
     const result = await esbuild.build({
         entryPoints: [normalizedEntryPoint],
         bundle: true,
         write: false,
         format: 'esm',
-        plugins: [inMemoryFsPlugin(virtualFiles)],
+        plugins: [plugin],
+        external: external,
     })
 
     if (!result.outputFiles?.length) {
         throw new Error('Bundling failed: No output files generated')
     }
 
-    return result.outputFiles[0].text
+    // Get the bundled code and subpath imports that were detected
+    return {
+        code: result.outputFiles[0].text,
+        subpathImports: getSubpathImports(),
+    }
 }
 
 /**
  * buildPreview(virtualFiles) bundles the provided virtual files and
  * returns a preview HTML string that injects the bundled JavaScript.
+ *
+ * @param virtualFiles Array of virtual files (with path and code)
+ * @param entryPoint Optional entry point path (defaults to '/index.ts')
+ * @param dependencies Optional map of external dependencies (package name to version)
+ * @returns A generated HTML preview
  */
 export async function buildPreview(
     virtualFiles: VirtualFile[],
     entryPoint?: string,
+    dependencies?: Record<string, string>,
 ): Promise<string> {
     await initializeEsbuild()
-    const bundledCode = await bundleFiles(virtualFiles, entryPoint)
-    return generatePreviewHtml(bundledCode)
+    const { code: bundledCode, subpathImports } = await bundleFiles(
+        virtualFiles,
+        entryPoint,
+        dependencies,
+    )
+
+    // Generate import map for external dependencies
+    let importMap: Record<string, string> | undefined = undefined
+
+    if (dependencies) {
+        importMap = {}
+
+        // Add all base packages to the import map
+        Object.entries(dependencies).forEach(([name, version]) => {
+            importMap![name] = `https://esm.sh/${name}@${version}`
+        })
+
+        // Add detected subpath imports to the import map
+        for (const subpathImport of subpathImports) {
+            const [packageName, ...subpathParts] = subpathImport.split('/')
+            const version = dependencies[packageName]
+            if (version) {
+                importMap![subpathImport] =
+                    `https://esm.sh/${packageName}@${version}/${subpathParts.join('/')}`
+            }
+        }
+    }
+
+    return generatePreviewHtml(bundledCode, 'TSX Preview', importMap)
 }

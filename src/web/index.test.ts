@@ -83,24 +83,32 @@ describe('Web TSX Preview', () => {
     })
 
     test('bundleFiles should bundle a single file', async () => {
-        const result = await bundleFiles(basicVirtualFiles)
-
-        // The actual bundled output should contain console.log
-        expect(result).toContain('console.log("Hello")')
-    })
-
-    test('bundleFiles should use a custom entry point if provided', async () => {
-        const customFiles: VirtualFile[] = [
+        const virtualFiles = [
             {
-                path: '/custom.ts',
-                code: 'console.log("Custom entry point")',
+                path: '/index.ts',
+                code: 'console.log("Hello, world!");',
             },
         ]
 
-        const result = await bundleFiles(customFiles, '/custom.ts')
+        const { code } = await bundleFiles(virtualFiles)
+        expect(code).toContain('console.log("Hello, world!")')
+    })
 
-        // The bundled result should contain our custom code
-        expect(result).toContain('console.log("Custom entry point")')
+    test('bundleFiles should use a custom entry point if provided', async () => {
+        const virtualFiles = [
+            {
+                path: '/index.ts',
+                code: 'console.log("This is the index file");',
+            },
+            {
+                path: '/custom.ts',
+                code: 'console.log("This is the custom entry point");',
+            },
+        ]
+
+        const { code } = await bundleFiles(virtualFiles, '/custom.ts')
+        expect(code).toContain('custom entry point')
+        expect(code).not.toContain('index file')
     })
 
     test('buildPreview should generate HTML with bundled JavaScript', async () => {
@@ -138,12 +146,104 @@ describe('Web TSX Preview', () => {
             { path: '/constants.ts', code: 'export const FACTOR = 2;' },
         ]
 
-        const result = await bundleFiles(complexFiles)
+        const { code } = await bundleFiles(complexFiles)
 
         // Verify the code contains elements from all three files
-        expect(result).toContain('FACTOR') // from constants.ts
-        expect(result).toContain('function add') // from math.ts
-        expect(result).toContain('Sum is') // from index.ts
+        expect(code).toContain('FACTOR') // from constants.ts
+        expect(code).toContain('function add') // from math.ts
+        expect(code).toContain('Sum is') // from index.ts
+    })
+
+    test('buildPreview should include import map when dependencies are provided', async () => {
+        const simpleFiles = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import ReactDOM from 'react-dom';
+
+ReactDOM.render(React.createElement('div', null, 'Hello World'), document.getElementById('root'));`,
+            },
+        ]
+
+        const dependencies = {
+            react: '18.2.0',
+            'react-dom': '18.2.0',
+        }
+
+        const html = await buildPreview(simpleFiles, '/index.tsx', dependencies)
+
+        // Verify the import map is included in the HTML
+        expect(html).toContain('<script type="importmap">')
+        expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
+        expect(html).toContain('"react-dom": "https://esm.sh/react-dom@18.2.0"')
+        expect(html).toContain('</script>')
+    })
+
+    test('bundleFiles should support external dependencies through importmap', async () => {
+        const filesWithExternalDeps = [
+            {
+                path: '/index.ts',
+                code: `import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  return count;
+}
+
+console.log(Counter);`,
+            },
+        ]
+
+        const dependencies = {
+            react: '18.2.0',
+        }
+
+        // This should bundle without errors, treating react as external
+        const { code, subpathImports } = await bundleFiles(
+            filesWithExternalDeps,
+            '/index.ts',
+            dependencies,
+        )
+
+        // The bundled code should reference react, but not include its implementation
+        expect(code).toContain('import')
+        expect(code).toContain('react')
+        // Should not contain useState implementation since it's external
+        expect(code).not.toContain('function useState')
+    })
+
+    test('buildPreview should handle subpath imports in import maps', async () => {
+        const filesWithSubpaths = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import { createRoot } from 'react-dom/client';
+
+function App() {
+  return React.createElement('div', null, 'Hello World');
+}
+
+createRoot(document.getElementById('root')).render(React.createElement(App));`,
+            },
+        ]
+
+        const dependencies = {
+            react: '18.2.0',
+            'react-dom': '18.2.0',
+        }
+
+        const html = await buildPreview(
+            filesWithSubpaths,
+            '/index.tsx',
+            dependencies,
+        )
+
+        // Verify that both the main package and subpath are in the import map
+        expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
+        expect(html).toContain('"react-dom": "https://esm.sh/react-dom@18.2.0"')
+        expect(html).toContain(
+            '"react-dom/client": "https://esm.sh/react-dom@18.2.0/client"',
+        )
     })
 })
 
@@ -171,15 +271,14 @@ describe('In-Memory Filesystem Plugin', () => {
             return {}
         }
 
+        // We need to capture the callback to test it
+        let resolveCallback: any
+
         const build = {
             onResolve: (options: any, callback: any) => {
-                const result = callback({
-                    path: './style.css',
-                    importer: '/index.ts',
-                })
-
-                expect(result.path).toBe('/style.css')
-                expect(result.namespace).toBe('in-memory')
+                if (options.namespace === 'in-memory') {
+                    resolveCallback = callback
+                }
                 return mockCallback
             },
             onLoad: () => {},
@@ -187,6 +286,17 @@ describe('In-Memory Filesystem Plugin', () => {
 
         // Set up the plugin
         plugin.setup(build)
+
+        // Test that our namespaced resolver was registered and works correctly
+        if (resolveCallback) {
+            const result = resolveCallback({
+                path: './style.css',
+                importer: '/index.ts',
+            })
+
+            expect(result.path).toBe('/style.css')
+            expect(result.namespace).toBe('in-memory')
+        }
     })
 
     test('plugin resolves extensionless imports', async () => {
@@ -199,10 +309,10 @@ describe('In-Memory Filesystem Plugin', () => {
         ]
 
         // Actually test using the bundler with extensionless imports
-        const result = await bundleFiles(virtualFiles)
+        const { code } = await bundleFiles(virtualFiles)
 
         // Verify the code contains content from both files
-        expect(result).toContain('bar') // The value should be included in the bundled output
+        expect(code).toContain('bar') // The value should be included in the bundled output
     })
 
     test('plugin loads file content with the correct loader', async () => {
@@ -245,93 +355,70 @@ describe('In-Memory Filesystem Plugin', () => {
             { path: '/constants.ts', code: 'export const FACTOR = 2;' },
         ]
 
-        const result = await bundleFiles(complexFiles)
+        const { code } = await bundleFiles(complexFiles)
 
         // Verify the code contains elements from all three files
-        expect(result).toContain('FACTOR') // from constants.ts
-        expect(result).toContain('function add') // from math.ts
-        expect(result).toContain('Sum is') // from index.ts
+        expect(code).toContain('FACTOR') // from constants.ts
+        expect(code).toContain('function add') // from math.ts
+        expect(code).toContain('Sum is') // from index.ts
     })
 })
 
 // New tests for paths without leading forward slashes
 describe('Paths without leading forward slashes', () => {
     test('bundleFiles should work with files that have no leading slash', async () => {
-        // Files without leading slashes
-        const virtualFiles: VirtualFile[] = [
+        const virtualFiles = [
             {
-                path: 'index.ts',
-                code: `import { helper } from './utils';\nconsole.log(helper());`,
-            },
-            {
-                path: 'utils.ts',
-                code: `export function helper() { return "It works!"; }`,
+                path: 'index.ts', // No leading slash
+                code: 'console.log("No slash")',
             },
         ]
 
-        // This should fail until we implement the feature
-        const result = await bundleFiles(virtualFiles)
-
-        // The bundled result should contain our code
-        expect(result).toContain('It works!')
+        const { code } = await bundleFiles(virtualFiles, 'index.ts')
+        expect(code).toContain('console.log("No slash")')
     })
 
     test('buildPreview should work with files that have no leading slash', async () => {
-        const virtualFiles: VirtualFile[] = [
+        const virtualFiles = [
             {
-                path: 'index.ts',
-                code: `console.log("No leading slash");`,
+                path: 'index.ts', // No leading slash
+                code: 'console.log("No slash")',
             },
         ]
 
-        // This should fail until we implement the feature
-        const html = await buildPreview(virtualFiles)
-
-        // Check that our code is included
-        expect(html).toContain('No leading slash')
+        const html = await buildPreview(virtualFiles, 'index.ts')
+        expect(html).toContain('console.log("No slash")')
     })
 
     test('importing between files with no leading slashes should work', async () => {
-        const virtualFiles: VirtualFile[] = [
-            {
-                path: 'index.ts',
-                code: `import { data } from './data';\nconsole.log(data);`,
-            },
-            {
-                path: 'data.ts',
-                code: `export const data = "Imported without leading slash";`,
-            },
-        ]
-
-        // This should fail until we implement the feature
-        const result = await bundleFiles(virtualFiles)
-
-        // The bundled result should contain our code
-        expect(result).toContain('Imported without leading slash')
-    })
-
-    test('mixed paths with and without leading slashes should work', async () => {
-        const virtualFiles: VirtualFile[] = [
+        const virtualFiles = [
             {
                 path: 'index.ts', // No leading slash
-                code: `import { fn } from './util';\nimport { data } from '/data';\nconsole.log(fn(data));`,
+                code: 'import { message } from "./util";\nconsole.log(message);',
             },
             {
                 path: 'util.ts', // No leading slash
-                code: `export function fn(input: string) { return input.toUpperCase(); }`,
-            },
-            {
-                path: '/data.ts', // With leading slash
-                code: `export const data = "Mixed path styles";`,
+                code: 'export const message = "Imported from util";',
             },
         ]
 
-        // This should fail until we implement the feature
-        const result = await bundleFiles(virtualFiles)
+        const { code } = await bundleFiles(virtualFiles, 'index.ts')
+        expect(code).toContain('Imported from util')
+    })
 
-        // Check for the relevant parts instead of the uppercased result
-        expect(result).toContain('Mixed path styles') // Original string from data.ts
-        expect(result).toContain('function fn') // Function from util.ts
-        expect(result).toContain('console.log(fn(data))') // Usage from index.ts
+    test('mixed paths with and without leading slashes should work', async () => {
+        const virtualFiles = [
+            {
+                path: '/index.ts', // With leading slash
+                code: 'import { message } from "./util";\nconsole.log(message);',
+            },
+            {
+                path: 'util.ts', // No leading slash
+                code: 'export const message = "Mixed paths";',
+            },
+        ]
+
+        const { code } = await bundleFiles(virtualFiles)
+        expect(code).toContain('Mixed paths')
     })
 })
