@@ -1,4 +1,4 @@
-<h1 align="center">🔍 ts-preview</h1>
+<h1 align="center">ts-preview</h1>
 <p align="center">A lightweight utility to generate browser-previewable HTML files from TypeScript/TSX projects</p>
 
 <pre align="center">bunx <b>ts-preview</b> path/to/file.ts</pre>
