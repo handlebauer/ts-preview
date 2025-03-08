@@ -1,11 +1,11 @@
 {
-    "name": "tsx-preview",
+    "name": "ts-preview",
     "module": "index.ts",
     "type": "module",
     "private": false,
     "version": "0.1.0",
     "bin": {
-        "tsx-preview": "./dist/cli.js"
+        "ts-preview": "./dist/cli.js"
     },
     "files": [
         "dist"
