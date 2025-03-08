@@ -1,1 +1,1 @@
-console.log('Hello World') // testing husky
+console.log('Hello World')
