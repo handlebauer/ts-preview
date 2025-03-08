@@ -253,3 +253,85 @@ describe('In-Memory Filesystem Plugin', () => {
         expect(result).toContain('Sum is') // from index.ts
     })
 })
+
+// New tests for paths without leading forward slashes
+describe('Paths without leading forward slashes', () => {
+    test('bundleFiles should work with files that have no leading slash', async () => {
+        // Files without leading slashes
+        const virtualFiles: VirtualFile[] = [
+            {
+                path: 'index.ts',
+                code: `import { helper } from './utils';\nconsole.log(helper());`,
+            },
+            {
+                path: 'utils.ts',
+                code: `export function helper() { return "It works!"; }`,
+            },
+        ]
+
+        // This should fail until we implement the feature
+        const result = await bundleFiles(virtualFiles)
+
+        // The bundled result should contain our code
+        expect(result).toContain('It works!')
+    })
+
+    test('buildPreview should work with files that have no leading slash', async () => {
+        const virtualFiles: VirtualFile[] = [
+            {
+                path: 'index.ts',
+                code: `console.log("No leading slash");`,
+            },
+        ]
+
+        // This should fail until we implement the feature
+        const html = await buildPreview(virtualFiles)
+
+        // Check that our code is included
+        expect(html).toContain('No leading slash')
+    })
+
+    test('importing between files with no leading slashes should work', async () => {
+        const virtualFiles: VirtualFile[] = [
+            {
+                path: 'index.ts',
+                code: `import { data } from './data';\nconsole.log(data);`,
+            },
+            {
+                path: 'data.ts',
+                code: `export const data = "Imported without leading slash";`,
+            },
+        ]
+
+        // This should fail until we implement the feature
+        const result = await bundleFiles(virtualFiles)
+
+        // The bundled result should contain our code
+        expect(result).toContain('Imported without leading slash')
+    })
+
+    test('mixed paths with and without leading slashes should work', async () => {
+        const virtualFiles: VirtualFile[] = [
+            {
+                path: 'index.ts', // No leading slash
+                code: `import { fn } from './util';\nimport { data } from '/data';\nconsole.log(fn(data));`,
+            },
+            {
+                path: 'util.ts', // No leading slash
+                code: `export function fn(input: string) { return input.toUpperCase(); }`,
+            },
+            {
+                path: '/data.ts', // With leading slash
+                code: `export const data = "Mixed path styles";`,
+            },
+        ]
+
+        // This should fail until we implement the feature
+        const result = await bundleFiles(virtualFiles)
+
+        // Check for the relevant parts instead of the uppercased result
+        expect(result).toContain('Mixed path styles') // Original string from data.ts
+        expect(result).toContain('function fn') // Function from util.ts
+        expect(result).toContain('console.log(fn(data))') // Usage from index.ts
+    })
+})

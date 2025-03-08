@@ -1,10 +1,18 @@
 import * as esbuild from 'esbuild-wasm'
+import { normalizePath } from '../shared/utils'
 
 export function inMemoryFsPlugin(files: { path: string; code: string }[]) {
     const fsMap = new Map<string, { path: string; code: string }>()
+
+    // Normalize all file paths when populating the map
     files.forEach(file => {
-        fsMap.set(file.path, file)
+        const normalizedPath = normalizePath(file.path)
+        fsMap.set(normalizedPath, {
+            ...file,
+            path: normalizedPath, // Store the normalized path
+        })
     })
+
     return {
         name: 'in-memory-fs',
         setup(build: esbuild.PluginBuild) {
@@ -22,6 +30,7 @@ export function inMemoryFsPlugin(files: { path: string; code: string }[]) {
 
                     // Get the normalized path
                     let path = resolvedUrl.pathname
+                    path = normalizePath(path)
 
                     // First, check if the exact path exists
                     if (fsMap.has(path)) {
@@ -55,25 +64,30 @@ export function inMemoryFsPlugin(files: { path: string; code: string }[]) {
                         namespace: 'in-memory',
                     }
                 }
-                return { path: args.path, namespace: 'in-memory' }
+                // Add normalization here for the entry point
+                const normalizedPath = normalizePath(args.path)
+                return { path: normalizedPath, namespace: 'in-memory' }
             })
 
             // Load file content from the in‑memory map.
             build.onLoad({ filter: /.*/, namespace: 'in-memory' }, args => {
-                const file = fsMap.get(args.path)
+                // Normalize the path for the lookup
+                const normalizedPath = normalizePath(args.path)
+                const file = fsMap.get(normalizedPath)
+
                 if (!file) {
                     return {
                         errors: [
                             {
-                                text: `File not found in virtual FS: ${args.path}`,
+                                text: `File not found in virtual FS: ${normalizedPath}`,
                             },
                         ],
                     }
                 }
                 let loader: esbuild.Loader = 'js'
-                if (args.path.endsWith('.ts')) loader = 'ts'
-                if (args.path.endsWith('.tsx')) loader = 'tsx'
-                if (args.path.endsWith('.jsx')) loader = 'jsx'
+                if (normalizedPath.endsWith('.ts')) loader = 'ts'
+                if (normalizedPath.endsWith('.tsx')) loader = 'tsx'
+                if (normalizedPath.endsWith('.jsx')) loader = 'jsx'
                 return { contents: file.code, loader }
             })
         },

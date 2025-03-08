@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild-wasm'
 import { inMemoryFsPlugin } from './plugins.ts'
 import { generatePreviewHtml } from '../shared/html'
+import { normalizePath } from '../shared/utils'
 import type { VirtualFile } from './types'
 
 // Re-export types for library users
@@ -29,8 +30,11 @@ export async function bundleFiles(
     virtualFiles: VirtualFile[],
     entryPoint: string = '/index.ts',
 ): Promise<string> {
+    // Normalize the entry point path
+    const normalizedEntryPoint = normalizePath(entryPoint)
+
     const result = await esbuild.build({
-        entryPoints: [entryPoint],
+        entryPoints: [normalizedEntryPoint],
         bundle: true,
         write: false,
         format: 'esm',

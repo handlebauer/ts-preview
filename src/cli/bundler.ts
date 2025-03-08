@@ -6,6 +6,10 @@
 export async function bundleTypeScript(
     entrypointPath: string,
 ): Promise<string> {
+    // Note: For filesystem paths, we don't need to normalize with normalizePath
+    // since we're working with actual files, not virtual paths.
+    // The normalizePath utility is primarily for the virtual filesystem.
+
     // Use Bun.build to bundle the TypeScript code
     const result = await Bun.build({
         entrypoints: [entrypointPath],

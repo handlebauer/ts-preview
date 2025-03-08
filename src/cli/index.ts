@@ -59,6 +59,8 @@ program
 
             try {
                 // Step 3: Bundle the TypeScript code
+                // Note: We're working with filesystem paths here, not virtual paths,
+                // so we don't use normalizePath for the actual filesystem paths.
                 const bundledCode = await bundleTypeScript(entrypointPath)
 
                 // Set default output extension based on output type

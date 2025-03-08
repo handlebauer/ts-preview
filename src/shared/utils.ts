@@ -20,3 +20,17 @@ export function indentCode(code: string, spaces: number = 2): string {
 export async function fileExists(path: string): Promise<boolean> {
     return await Bun.file(path).exists()
 }
+
+/**
+ * Normalizes a path to always have a leading forward slash
+ * @param path The path to normalize
+ * @returns Path with a leading forward slash
+ */
+export function normalizePath(path: string): string {
+    // If path is empty or already starts with a slash, return it
+    if (!path || path.startsWith('/')) {
+        return path
+    }
+    // Otherwise, add a leading slash
+    return '/' + path
+}
