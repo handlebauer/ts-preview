@@ -1,86 +1,40 @@
 <h1 align="center">ts-preview</h1>
-<p align="center">A lightweight utility to generate browser-previewable HTML files from TypeScript/TSX projects</p>
+<p align="center">A browser-based TypeScript/TSX bundler that enables interactive code experiences</p>
 
-<pre align="center">bunx <b>ts-preview</b> path/to/file.ts</pre>
-
-<p align="center">or generate JavaScript only without HTML wrapper</p>
-
-<pre align="center">bunx ts-preview <b>--js-only</b> -o bundle.js</pre>
+<p align="center">An essential building block for creating code editors, sandboxes, and playgrounds</p>
 
 ## ✨ Features
 
-- **CLI tool** for local development
-- **Browser-based bundling** for web applications
-- **External dependencies support** with automatic subpath import resolution
-- **Package.json auto-detection** for seamless dependency management
-- **JS-only output** option for more flexibility
-- **Automatic entry point detection** from package.json
-- **In-memory file system** for browser-based bundling
-- **Built with Bun** for fast and efficient operation
+- **Browser-based bundling** - Works entirely client-side with WebAssembly
+- **React/TSX support** - Handles React and JSX/TSX with ease
+- **External dependencies** - Import from npm packages via CDN with automatic subpath resolution
+- **Package.json auto-detection** - Simple dependency management
+- **Virtual file system** - Bundle multi-file projects with proper imports
+- **Lightweight** - Built with esbuild-wasm for efficient processing
+- **Preview-ready output** - Generate HTML ready to be displayed in iframes or sandboxes
+- **CLI tool** - Also available for local development
 
-## 📦 Installation
+## 🚀 Web API Usage
 
-### Global Installation
+ts-preview provides the foundational tools for building interactive coding experiences:
 
-```bash
-# Install globally with Bun
-bun install -g ts-preview
+- Web-based code editors
+- Interactive documentation
+- Coding tutorials and examples
+- Coding playgrounds and sandboxes
+- Educational platforms
 
-# Or with npm
-npm install -g ts-preview
-```
-
-### Project Installation
+### Installation
 
 ```bash
-# Add to your project with Bun
-bun add ts-preview
-
-# Or with npm
+# Add to your project with npm
 npm install ts-preview
+
+# Or with Bun
+bun add ts-preview
 ```
 
-## 🚀 Usage
-
-### CLI
-
-Once installed globally, you can use the CLI directly:
-
-<p align="center">
-<b>Generate HTML preview (default)</b>
-</p>
-
-```bash
-# Use default entry point (src/index.ts)
-ts-preview
-
-# Specify custom entry point
-ts-preview path/to/your/file.ts
-
-# Specify output file
-ts-preview -o custom-preview.html
-```
-
-<p align="center">
-<b>Generate JavaScript only</b>
-</p>
-
-```bash
-# Output only bundled JavaScript (no HTML wrapper)
-ts-preview --js-only -o bundle.js
-```
-
-You can also use it with bunx without installation:
-
-```bash
-bunx ts-preview path/to/your/file.ts
-```
-
-### Web API
-
-The ts-preview package provides a browser-compatible API for bundling and previewing TypeScript files directly in web applications.
-
-#### Types
+### Core Types
 
 ```typescript
 // The core type for representing virtual files
@@ -90,15 +44,11 @@ interface VirtualFile {
 }
 ```
 
-#### Core Functions
-
-<p align="center">
-<b>Basic Usage</b>
-</p>
+### Basic Usage
 
 ```typescript
 // Import the library
-import { buildPreview, bundleFiles } from 'ts-preview'
+import { buildPreview } from 'ts-preview'
 
 // Create virtual files to bundle
 const virtualFiles = [
@@ -114,16 +64,10 @@ const virtualFiles = [
 
 // Generate a complete HTML preview with bundled JS
 const htmlPreview = await buildPreview(virtualFiles, '/index.ts')
-// => Returns an HTML string with your bundled code embedded
-
-// Or just bundle the files without HTML wrapping
-const bundledCode = await bundleFiles(virtualFiles, '/index.ts')
-// => Returns just the bundled JavaScript
+// => Returns an HTML string you can inject into an iframe or sandbox
 ```
 
-<p align="center">
-<b>React Component Preview</b>
-</p>
+### React Component Preview
 
 ```typescript
 import { buildPreview } from 'ts-preview'
@@ -143,10 +87,30 @@ const files = [
     {
         path: '/App.tsx',
         code: `
-      import React from 'react';
+      import React, { useState } from 'react';
       
       export function App() {
-        return <h1>Hello from React!</h1>;
+        const [count, setCount] = useState(0);
+        
+        return (
+          <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+            <h1>Hello from TS Preview!</h1>
+            <p>Count: {count}</p>
+            <button 
+              onClick={() => setCount(count + 1)}
+              style={{
+                background: 'blue',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Increment
+            </button>
+          </div>
+        );
       }
     `,
     },
@@ -161,87 +125,42 @@ const dependencies = {
 // Generate a preview HTML with the React app and its dependencies
 const html = await buildPreview(files, '/index.tsx', dependencies)
 
-// Use the HTML string in your application
-document.getElementById('preview-container').innerHTML = html
+// Use the HTML string in your application - for example, in an iframe
+document.getElementById('preview-container').innerHTML = `
+  <iframe
+    title="TypeScript Preview"
+    srcDoc="${html.replace(/"/g, '&quot;')}"
+    sandbox="allow-scripts"
+    width="100%"
+    height="100%"
+  ></iframe>
+`
 ```
 
-<p align="center">
-<b>Handling External Dependencies</b>
-</p>
+### Automatic Dependency Management
+
+ts-preview provides smart dependency resolution:
+
+#### Option 1: Specify Dependencies Explicitly
 
 ```typescript
-import { buildPreview } from 'ts-preview'
-
-// Example code using external libraries
-const files = [
-    {
-        path: '/index.tsx',
-        code: `
-      import React, { useState } from 'react';
-      import { createRoot } from 'react-dom/client';
-      
-      function Counter() {
-        const [count, setCount] = useState(0);
-        
-        return (
-          <div>
-            <p>Count: {count}</p>
-            <button onClick={() => setCount(count + 1)}>Increment</button>
-          </div>
-        );
-      }
-      
-      const root = createRoot(document.getElementById('root'));
-      root.render(<Counter />);
-    `,
-    },
-]
-
 // Specify the dependencies with their versions
 const dependencies = {
     react: '18.2.0',
     'react-dom': '18.2.0',
 }
 
-// Generate preview with external dependencies properly mapped
 const html = await buildPreview(files, '/index.tsx', dependencies)
-
-// ts-preview automatically handles subpath imports like 'react-dom/client'
 ```
 
-<p align="center">
-<b>Using package.json for Dependencies (Automatic Detection)</b>
-</p>
+#### Option 2: Use package.json for Automatic Detection
 
 ```typescript
-import { buildPreview } from 'ts-preview'
-
 // Include a package.json file in your virtual filesystem
 const files = [
     {
         path: '/index.tsx',
-        code: `
-      import React from 'react';
-      import { createRoot } from 'react-dom/client';
-      import { Button } from '@mui/material';
-      
-      function App() {
-        const [count, setCount] = React.useState(0);
-        
-        return (
-          <div>
-            <h1>Material UI Example</h1>
-            <p>Count: {count}</p>
-            <Button variant="contained" onClick={() => setCount(count + 1)}>
-              Increment
-            </Button>
-          </div>
-        );
-      }
-      
-      const root = createRoot(document.getElementById('root'));
-      root.render(<App />);
-    `,
+        code: '/* your code here */',
     },
     {
         path: '/package.json',
@@ -260,99 +179,193 @@ const files = [
 
 // ts-preview will automatically detect and use dependencies from package.json
 const html = await buildPreview(files, '/index.tsx')
-
-// No need to manually specify dependencies!
 ```
 
-#### Automatic Dependency Detection
-
-When working with ts-preview in a browser context, you can take advantage of automatic dependency detection:
-
-1. **Include package.json** - Simply include a package.json file in your virtual filesystem
-2. **No explicit dependencies required** - Dependencies will be automatically extracted from package.json
-3. **Priority system** - Explicitly provided dependencies will override those in package.json
-4. **Full subpath support** - Works with all the same subpath import features
-
-This is particularly useful when:
-
-- Building browser-based IDEs or playgrounds
-- Working with complete projects that already have package.json
-- Supporting user projects with complex dependency structures
+### Advanced Features
 
 #### Automatic Subpath Import Resolution
 
-When external dependencies are provided, ts-preview automatically:
+ts-preview handles subpath imports like `react-dom/client`:
 
-1. Detects all subpath imports (e.g., `react-dom/client`)
-2. Creates the necessary import map entries for each subpath
-3. Configures the preview to load the dependencies from a CDN (esm.sh)
+```typescript
+// Import includes a subpath: 'react-dom/client'
+const code = `
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  
+  function App() {
+    return <h1>Hello World</h1>;
+  }
+  
+  const root = createRoot(document.getElementById('root'));
+  root.render(<App />);
+`
 
-This enables seamless usage of libraries with subpath exports like React 18's client API without any additional configuration.
-
-#### Browser Compatibility
-
-The web API uses esbuild-wasm under the hood, which runs entirely in the browser. This allows you to bundle TypeScript/TSX code directly in web applications without requiring a server roundtrip.
-
-- Compatible with modern browsers that support WebAssembly
-- No need for a Node.js backend or build server
-- Efficient in-memory virtual file system for code management
-
-## 🎮 Examples
-
-Check out the examples in the [`examples`](./examples) directory to see ts-preview in action:
-
-- [**React Editor Demo**](./examples/react-vite): A React application that demonstrates how to create a simple code editor with live preview using ts-preview.
-
-To run the examples:
-
-```bash
-# Build the main package first
-bun run build
-
-# Navigate to the example directory
-cd examples/react-vite
-
-# Install dependencies and run
-bun install
-bun run dev
+// ts-preview automatically detects and resolves the subpath imports
+const html = await buildPreview([{ path: '/index.tsx', code }], '/index.tsx', {
+    react: '18.2.0',
+    'react-dom': '18.2.0',
+})
 ```
 
-## �� Project Structure
+#### JavaScript-Only Output
 
-- `/src/cli` - Command-line interface for local development
+If you need just the bundled JavaScript without HTML:
+
+```typescript
+import { bundleFiles } from 'ts-preview'
+
+const { code } = await bundleFiles(virtualFiles, '/index.tsx', dependencies)
+// => Returns just the bundled JavaScript
+```
+
+## 🎮 Building a Live Preview Editor
+
+Here's how ts-preview can be used to create an editor with live preview functionality:
+
+```javascript
+import { useState } from 'react'
+import Editor from '@monaco-editor/react'
+import { buildPreview } from 'ts-preview'
+
+function CodeEditor() {
+    const [files, setFiles] = useState([
+        {
+            path: '/index.tsx',
+            code: `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { App } from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);`,
+        },
+        {
+            path: '/App.tsx',
+            code: `import React, { useState } from 'react';
+
+export function App() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <h1>Hello from TS Preview!</h1>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}`,
+        },
+    ])
+    const [selectedFile, setSelectedFile] = useState(0)
+    const [preview, setPreview] = useState('')
+
+    const dependencies = {
+        react: '18.2.0',
+        'react-dom': '18.2.0',
+    }
+
+    const generatePreview = async () => {
+        try {
+            const html = await buildPreview(files, '/index.tsx', dependencies)
+            setPreview(html)
+        } catch (error) {
+            console.error('Error generating preview:', error)
+            setPreview(
+                `<html><body><pre>Error: ${error.message}</pre></body></html>`,
+            )
+        }
+    }
+
+    const handleCodeChange = value => {
+        const updatedFiles = [...files]
+        updatedFiles[selectedFile] = {
+            ...updatedFiles[selectedFile],
+            code: value,
+        }
+        setFiles(updatedFiles)
+    }
+
+    return (
+        <div className="editor-layout">
+            <div className="sidebar">
+                <h3>Files</h3>
+                <ul>
+                    {files.map((file, index) => (
+                        <li
+                            key={file.path}
+                            className={selectedFile === index ? 'selected' : ''}
+                            onClick={() => setSelectedFile(index)}
+                        >
+                            {file.path.startsWith('/')
+                                ? file.path.substring(1)
+                                : file.path}
+                        </li>
+                    ))}
+                </ul>
+                <button onClick={generatePreview}>Generate Preview</button>
+            </div>
+
+            <div className="editor">
+                <Editor
+                    value={files[selectedFile].code}
+                    onChange={handleCodeChange}
+                    language="typescript"
+                    theme="vs-dark"
+                />
+            </div>
+
+            <div className="preview">
+                {preview ? (
+                    <iframe
+                        srcDoc={preview}
+                        sandbox="allow-scripts"
+                        width="100%"
+                        height="100%"
+                    />
+                ) : (
+                    <div className="empty-preview">
+                        <p>
+                            Click "Generate Preview" to see your code in action
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+```
+
+## 🛠️ Browser Compatibility
+
+ts-preview works in modern browsers that support WebAssembly:
+
+- Chrome/Edge (v57+)
+- Firefox (v53+)
+- Safari (v11+)
+- Opera (v44+)
+
+## 📦 CLI Usage
+
+While the web API is the primary use case, ts-preview also provides a CLI for local development:
+
+```bash
+# Install globally
+npm install -g ts-preview
+
+# Generate an HTML preview
+ts-preview path/to/your/file.ts
+
+# Or with bunx (no installation required)
+bunx ts-preview path/to/your/file.ts
+```
+
+## 🧰 Project Structure
+
 - `/src/web` - Browser-based bundling and preview generation
-- `/src/shared` - Shared utilities for both CLI and web
-
-## 🛠️ Development
-
-```bash
-# Install dependencies
-bun install
-
-# Run the CLI during development
-bun run src/cli/index.ts
-
-# Run demo (generates both HTML preview and JS-only output)
-bun run src/cli/demo
-
-# Build the package (includes bundling and TypeScript declarations)
-bun run build
-
-# Run tests
-bun test
-```
-
-## 📢 Publishing
-
-After building with `bun run build`, you can publish the package:
-
-```bash
-# Publish from project root
-npm publish
-
-# Or with bun
-bun publish
-```
+- `/src/cli` - Command-line interface for local development
+- `/src/shared` - Shared utilities for both environments
 
 ## 📄 License
 
