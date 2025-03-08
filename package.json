@@ -22,7 +22,7 @@
     "scripts": {
         "prepare": "husky",
         "build": "bun run build.ts",
-        "publish": "bunx bumpp && bun run build.ts && bun publish",
+        "pub": "bun run build.ts && bun publish",
         "demo": "bun run src/cli/demo",
         "cli": "bun run src/cli/index.ts"
     },
