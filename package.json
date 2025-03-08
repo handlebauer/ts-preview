@@ -2,23 +2,54 @@
     "name": "tsx-preview",
     "module": "index.ts",
     "type": "module",
-    "private": true,
+    "private": false,
+    "version": "0.1.0",
+    "bin": {
+        "tsx-preview": "./dist/cli.js"
+    },
+    "files": [
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/web/index.d.ts"
+        },
+        "./cli": "./dist/cli.js"
+    },
+    "types": "./dist/web/index.d.ts",
+    "description": "A lightweight utility to generate browser-previewable HTML files from TypeScript/TSX projects",
+    "scripts": {
+        "prepare": "husky",
+        "build": "bun run build.ts",
+        "demo": "bun run src/cli/demo",
+        "cli": "bun run src/cli/index.ts"
+    },
     "devDependencies": {
         "@types/bun": "latest",
         "husky": "^9.1.7",
         "lint-staged": "^15.4.3",
-        "prettier": "3.5.3"
+        "prettier": "3.5.3",
+        "typescript": "^5.8.2"
     },
     "peerDependencies": {
         "typescript": "^5"
-    },
-    "scripts": {
-        "prepare": "husky"
     },
     "dependencies": {
         "commander": "^13.1.0",
         "esbuild-wasm": "^0.25.0",
         "figures": "^6.1.0",
         "yocto-spinner": "^0.2.1"
-    }
+    },
+    "engines": {
+        "bun": ">=1.0.0"
+    },
+    "keywords": [
+        "typescript",
+        "tsx",
+        "preview",
+        "bundler",
+        "bun"
+    ],
+    "license": "MIT"
 }

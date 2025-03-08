@@ -3,6 +3,9 @@ import { inMemoryFsPlugin } from './plugins.ts'
 import { generatePreviewHtml } from '../shared/html'
 import type { VirtualFile } from './types'
 
+// Re-export types for library users
+export type { VirtualFile } from './types'
+
 /**
  * Initialize esbuild-wasm if we're in a browser environment
  */
@@ -10,7 +13,7 @@ export async function initializeEsbuild(): Promise<void> {
     if (typeof window !== 'undefined') {
         await esbuild.initialize({
             worker: true,
-            wasmURL: 'https://esm.sh/esbuild-wasm@0.18.11/esbuild.wasm',
+            wasmURL: 'https://esm.sh/esbuild-wasm@0.25.0/esbuild.wasm',
         })
     }
 }
