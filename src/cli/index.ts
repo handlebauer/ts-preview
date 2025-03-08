@@ -2,7 +2,8 @@
 
 import { Command } from 'commander'
 import { resolve } from 'path'
-import { bundleTypeScript, generatePreviewHtml, fileExists } from '../shared'
+import { generatePreviewHtml, fileExists } from '../shared'
+import { bundleTypeScript } from './bundler'
 
 const program = new Command()
 
