@@ -3,6 +3,16 @@
 
 <p align="center">An essential building block for creating code editors, sandboxes, and playgrounds</p>
 
+```typescript
+// Create and preview TypeScript/React code - all in the browser
+const html = await buildPreview([
+    {
+        path: '/App.tsx',
+        code: 'export const App = () => <div>Hello world!</div>',
+    },
+])
+```
+
 ## ✨ Features
 
 - **Browser-based bundling** - Works entirely client-side with WebAssembly
@@ -345,6 +355,12 @@ ts-preview works in modern browsers that support WebAssembly:
 - Firefox (v53+)
 - Safari (v11+)
 - Opera (v44+)
+
+Additionally, ts-preview requires browsers that support **Import Maps** for dependency resolution:
+
+- Chrome/Edge (v89+)
+- Firefox (v108+)
+- Safari (v16.4+)
 
 ## 📦 CLI Usage
 
