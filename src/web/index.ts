@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild-wasm'
-import { createInMemoryFsPlugin, inMemoryFsPlugin } from './plugins.ts'
+import { createInMemoryFsPlugin } from './plugins.ts'
 import { generatePreviewHtml } from '../shared/html'
 import { normalizePath } from '../shared/utils'
 import type { VirtualFile } from './types'
