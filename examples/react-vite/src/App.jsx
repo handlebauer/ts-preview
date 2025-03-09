@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Editor from '@monaco-editor/react'
 import { buildPreview } from '../../../src/web/index.ts'
+import { debounce } from 'es-toolkit'
 import './App.css'
 
 // Add React typings to Monaco
@@ -87,17 +88,35 @@ function App() {
     const [selectedFile, setSelectedFile] = useState(0)
     const [preview, setPreview] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    // Track if the preview has been manually triggered at least once
+    const [hasPreviewBeenTriggered, setHasPreviewBeenTriggered] =
+        useState(false)
 
     const dependencies = {
         react: '18.2.0',
         'react-dom': '18.2.0',
     }
 
+    // Store current files in a ref to avoid stale closures in debounced function
+    const filesRef = useRef(files)
+    useEffect(() => {
+        filesRef.current = files
+    }, [files])
+
     const generatePreview = async () => {
         setIsLoading(true)
         try {
-            const html = await buildPreview(files, '/index.tsx', dependencies)
+            // Use filesRef.current to always get the latest files
+            const html = await buildPreview(
+                filesRef.current,
+                '/index.tsx',
+                dependencies,
+            )
             setPreview(html)
+            // Set the flag to true once preview has been generated
+            if (!hasPreviewBeenTriggered) {
+                setHasPreviewBeenTriggered(true)
+            }
         } catch (error) {
             console.error('Error generating preview:', error)
             setPreview(
@@ -108,6 +127,18 @@ function App() {
         }
     }
 
+    // Create a debounced version of the preview generation that is stable across renders
+    const debouncedGeneratePreview = useRef(
+        debounce(generatePreview, 1000), // 1-second delay
+    ).current
+
+    // Only auto-update the preview if it has been manually triggered at least once
+    useEffect(() => {
+        if (hasPreviewBeenTriggered) {
+            debouncedGeneratePreview()
+        }
+    }, [files, hasPreviewBeenTriggered])
+
     const handleCodeChange = value => {
         const updatedFiles = [...files]
         updatedFiles[selectedFile] = {
@@ -115,6 +146,11 @@ function App() {
             code: value,
         }
         setFiles(updatedFiles)
+        // No need to call generatePreview here as the useEffect will handle it if needed
+    }
+
+    const handlePreviewButtonClick = () => {
+        generatePreview()
     }
 
     const addNewFile = () => {
@@ -161,10 +197,10 @@ function App() {
                 </div>
                 <button
                     className="preview-btn"
-                    onClick={generatePreview}
+                    onClick={handlePreviewButtonClick}
                     disabled={isLoading}
                 >
-                    Generate Preview
+                    {isLoading ? 'Updating...' : 'Generate Preview'}
                 </button>
             </div>
 
@@ -221,7 +257,9 @@ function App() {
                 ) : (
                     <div className="empty-preview">
                         <p>
-                            Click "Generate Preview" to see your code in action
+                            {hasPreviewBeenTriggered
+                                ? 'Waiting for code changes to preview...'
+                                : "Click 'Generate Preview' to see your code in action"}
                         </p>
                     </div>
                 )}

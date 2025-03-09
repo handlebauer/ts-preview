@@ -149,6 +149,13 @@
     cursor: not-allowed;
 }
 
+.preview-info {
+    margin-top: 8px;
+    text-align: center;
+    color: #888;
+    font-size: 0.8rem;
+}
+
 /* Editor container */
 .editor-container {
     height: 100%;
