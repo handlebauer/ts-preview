@@ -7,6 +7,12 @@ import type { VirtualFile } from './types'
 // Re-export types for library users
 export type { VirtualFile } from './types'
 
+// Define PreviewOptions interface for the new API
+export interface PreviewOptions {
+    dependencies?: Record<string, string>
+    tailwind?: boolean
+}
+
 // Flag to track initialization state
 let isEsbuildInitialized = false
 
@@ -110,43 +116,43 @@ export async function bundleFiles(
  *
  * @param virtualFiles Array of virtual files (with path and code)
  * @param entryPoint Optional entry point path (defaults to '/index.ts')
- * @param dependencies Optional map of external dependencies (package name to version)
+ * @param options Optional configuration options including dependencies and tailwind support
  * @returns A generated HTML preview
  */
 export async function buildPreview(
     virtualFiles: VirtualFile[],
     entryPoint?: string,
-    dependencies?: Record<string, string>,
+    options?: PreviewOptions,
 ): Promise<string> {
     // esbuild should already be initialized by the automatic initialization
-    // but one can never be too careful now can they now can they now can they
     await initializeEsbuild()
 
-    // Extract dependencies from package.json if none are provided
-    const depsToUse =
-        dependencies || extractDependenciesFromPackageJson(virtualFiles)
+    // Extract dependencies from options or package.json
+    const dependencies =
+        options?.dependencies ||
+        extractDependenciesFromPackageJson(virtualFiles)
 
     const { code: bundledCode, subpathImports } = await bundleFiles(
         virtualFiles,
         entryPoint,
-        depsToUse,
+        dependencies,
     )
 
     // Generate import map for external dependencies
     let importMap: Record<string, string> | undefined = undefined
 
-    if (Object.keys(depsToUse).length > 0) {
+    if (Object.keys(dependencies).length > 0) {
         importMap = {}
 
         // Add all base packages to the import map
-        Object.entries(depsToUse).forEach(([name, version]) => {
+        Object.entries(dependencies).forEach(([name, version]) => {
             importMap![name] = `https://esm.sh/${name}@${version}`
         })
 
         // Add detected subpath imports to the import map
         for (const subpathImport of subpathImports) {
             const [packageName, ...subpathParts] = subpathImport.split('/')
-            const version = depsToUse[packageName]
+            const version = dependencies[packageName]
             if (version) {
                 importMap![subpathImport] =
                     `https://esm.sh/${packageName}@${version}/${subpathParts.join('/')}`
@@ -154,5 +160,10 @@ export async function buildPreview(
         }
     }
 
-    return generatePreviewHtml(bundledCode, 'TSX Preview', importMap)
+    return generatePreviewHtml(
+        bundledCode,
+        'TSX Preview',
+        importMap,
+        options?.tailwind,
+    )
 }

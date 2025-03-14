@@ -5,12 +5,14 @@ import { indentCode } from './utils'
  * @param jsCode The bundled JavaScript code to include in the preview
  * @param title The title of the preview HTML page
  * @param importMap Optional import map for external dependencies
+ * @param includeTailwind Whether to include Tailwind CSS
  * @returns A formatted HTML string
  */
 export function generatePreviewHtml(
     jsCode: string,
     title: string = 'TSX Preview',
     importMap?: Record<string, string>,
+    includeTailwind?: boolean,
 ): string {
     let importMapScript = ''
 
@@ -20,6 +22,10 @@ ${indentCode(JSON.stringify({ imports: importMap }, null, 2), 2)}
 </script>`
     }
 
+    const tailwindScript = includeTailwind
+        ? '<script src="https://cdn.tailwindcss.com"></script>'
+        : ''
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +33,7 @@ ${indentCode(JSON.stringify({ imports: importMap }, null, 2), 2)}
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   ${importMapScript}
+  ${tailwindScript}
 </head>
 <body>
   <div id="root"></div>

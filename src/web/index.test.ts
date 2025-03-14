@@ -170,7 +170,9 @@ ReactDOM.render(React.createElement('div', null, 'Hello World'), document.getEle
             'react-dom': '18.2.0',
         }
 
-        const html = await buildPreview(simpleFiles, '/index.tsx', dependencies)
+        const html = await buildPreview(simpleFiles, '/index.tsx', {
+            dependencies,
+        })
 
         // Verify the import map is included in the HTML
         expect(html).toContain('<script type="importmap">')
@@ -199,7 +201,7 @@ console.log(Counter);`,
         }
 
         // This should bundle without errors, treating react as external
-        const { code, subpathImports } = await bundleFiles(
+        const { code } = await bundleFiles(
             filesWithExternalDeps,
             '/index.ts',
             dependencies,
@@ -232,11 +234,9 @@ createRoot(document.getElementById('root')).render(React.createElement(App));`,
             'react-dom': '18.2.0',
         }
 
-        const html = await buildPreview(
-            filesWithSubpaths,
-            '/index.tsx',
+        const html = await buildPreview(filesWithSubpaths, '/index.tsx', {
             dependencies,
-        )
+        })
 
         // Verify that both the main package and subpath are in the import map
         expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
@@ -310,16 +310,118 @@ ReactDOM.render(React.createElement('div', null, 'Hello World'), document.getEle
             'react-dom': '18.2.0',
         }
 
-        const html = await buildPreview(
-            filesWithPackageJson,
-            '/index.tsx',
-            explicitDependencies,
-        )
+        const html = await buildPreview(filesWithPackageJson, '/index.tsx', {
+            dependencies: explicitDependencies,
+        })
 
         // Verify that explicit dependencies are used, not those from package.json
         expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
         expect(html).toContain('"react-dom": "https://esm.sh/react-dom@18.2.0"')
         expect(html).not.toContain('17.0.2') // Should not include the versions from package.json
+    })
+
+    test('buildPreview should include Tailwind CSS when enabled', async () => {
+        const simpleFiles = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import ReactDOM from 'react-dom';
+
+function App() {
+  return (
+    <div className="bg-blue-500 text-white p-4 rounded">
+      Hello Tailwind World
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));`,
+            },
+        ]
+
+        // Using the new options-based API design
+        const options = {
+            dependencies: {
+                react: '18.2.0',
+                'react-dom': '18.2.0',
+            },
+            tailwind: true,
+        }
+
+        const html = await buildPreview(simpleFiles, '/index.tsx', options)
+
+        // Verify that Tailwind CSS CDN is included in the HTML head
+        expect(html).toContain(
+            '<script src="https://cdn.tailwindcss.com"></script>',
+        )
+
+        // Also verify the basic functionality still works
+        expect(html).toContain('<script type="importmap">')
+        expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
+        expect(html).toContain('"react-dom": "https://esm.sh/react-dom@18.2.0"')
+    })
+
+    test('buildPreview should not include Tailwind CSS when disabled', async () => {
+        const simpleFiles = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import ReactDOM from 'react-dom';
+
+function App() {
+  return <div>Hello World</div>;
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));`,
+            },
+        ]
+
+        // Using the new options object with Tailwind explicitly disabled
+        const options = {
+            dependencies: {
+                react: '18.2.0',
+                'react-dom': '18.2.0',
+            },
+            tailwind: false,
+        }
+
+        const html = await buildPreview(simpleFiles, '/index.tsx', options)
+
+        // Verify that Tailwind CSS is NOT included
+        expect(html).not.toContain(
+            '<script src="https://cdn.tailwindcss.com"></script>',
+        )
+
+        // Basic functionality should still work
+        expect(html).toContain('<script type="importmap">')
+    })
+
+    test('buildPreview should work with the old API for backward compatibility', async () => {
+        const simpleFiles = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import ReactDOM from 'react-dom';
+
+ReactDOM.render(<div>Hello World</div>, document.getElementById('root'));`,
+            },
+        ]
+
+        const dependencies = {
+            react: '18.2.0',
+            'react-dom': '18.2.0',
+        }
+
+        // Call with the old API style
+        const html = await buildPreview(simpleFiles, '/index.tsx', {
+            dependencies,
+        })
+
+        // Should work as before without Tailwind
+        expect(html).not.toContain(
+            '<script src="https://cdn.tailwindcss.com"></script>',
+        )
+        expect(html).toContain('"react": "https://esm.sh/react@18.2.0"')
     })
 })
 
@@ -401,7 +503,7 @@ describe('In-Memory Filesystem Plugin', () => {
         // Create a mock build object with typed onLoad
         const build = {
             onResolve: () => {},
-            onLoad: (options: any, callback: any) => {
+            onLoad: (_options: any, callback: any) => {
                 const result = callback({
                     path: '/index.ts',
                     namespace: 'in-memory',

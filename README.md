@@ -22,6 +22,7 @@ const html = await buildPreview([
 - **Virtual file system** - Bundle multi-file projects with proper imports
 - **Lightweight** - Built with esbuild-wasm for efficient processing
 - **Preview-ready output** - Generate HTML ready to be displayed in iframes or sandboxes
+- **Tailwind CSS support** - Enable Tailwind CSS styling with a single option
 - **CLI tool** - Also available for local development
 
 ## 🚀 Web API Usage
@@ -51,6 +52,12 @@ bun add ts-preview
 interface VirtualFile {
     path: string // Path of the file in the virtual filesystem (e.g., '/index.ts')
     code: string // The source code content of the file
+}
+
+// Options for customizing preview generation
+interface PreviewOptions {
+    dependencies?: Record<string, string> // External dependencies (package name to version)
+    tailwind?: boolean // Whether to include Tailwind CSS
 }
 ```
 
@@ -126,14 +133,16 @@ const files = [
     },
 ]
 
-// External dependencies for the React app
-const dependencies = {
-    react: '18.2.0',
-    'react-dom': '18.2.0',
+// Options for the preview, including dependencies
+const options = {
+    dependencies: {
+        react: '18.2.0',
+        'react-dom': '18.2.0',
+    },
 }
 
 // Generate a preview HTML with the React app and its dependencies
-const html = await buildPreview(files, '/index.tsx', dependencies)
+const html = await buildPreview(files, '/index.tsx', options)
 
 // Use the HTML string in your application - for example, in an iframe
 document.getElementById('preview-container').innerHTML = `
@@ -155,12 +164,14 @@ ts-preview provides smart dependency resolution:
 
 ```typescript
 // Specify the dependencies with their versions
-const dependencies = {
-    react: '18.2.0',
-    'react-dom': '18.2.0',
+const options = {
+    dependencies: {
+        react: '18.2.0',
+        'react-dom': '18.2.0',
+    },
 }
 
-const html = await buildPreview(files, '/index.tsx', dependencies)
+const html = await buildPreview(files, '/index.tsx', options)
 ```
 
 #### Option 2: Use package.json for Automatic Detection
@@ -193,6 +204,54 @@ const html = await buildPreview(files, '/index.tsx')
 
 ### Advanced Features
 
+#### Tailwind CSS Support
+
+ts-preview can include Tailwind CSS in your previews with a simple flag:
+
+```typescript
+// Create a simple React component using Tailwind CSS classes
+const files = [
+    {
+        path: '/index.tsx',
+        code: `
+      import React from 'react';
+      import ReactDOM from 'react-dom';
+      
+      function App() {
+        return (
+          <div className="flex flex-col items-center p-8 bg-gray-100 min-h-screen">
+            <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
+              <h1 className="text-2xl font-bold text-blue-600 mb-4">
+                Tailwind CSS Example
+              </h1>
+              <p className="text-gray-700 mb-4">
+                This component is styled with Tailwind CSS!
+              </p>
+              <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Click me
+              </button>
+            </div>
+          </div>
+        );
+      }
+      
+      ReactDOM.render(<App />, document.getElementById('root'));
+    `,
+    },
+]
+
+// Enable Tailwind CSS in the preview
+const options = {
+    dependencies: {
+        react: '18.2.0',
+        'react-dom': '18.2.0',
+    },
+    tailwind: true, // This adds Tailwind CSS to the preview
+}
+
+const html = await buildPreview(files, '/index.tsx', options)
+```
+
 #### Automatic Subpath Import Resolution
 
 ts-preview handles subpath imports like `react-dom/client`:
@@ -212,10 +271,18 @@ const code = `
 `
 
 // ts-preview automatically detects and resolves the subpath imports
-const html = await buildPreview([{ path: '/index.tsx', code }], '/index.tsx', {
-    react: '18.2.0',
-    'react-dom': '18.2.0',
-})
+const options = {
+    dependencies: {
+        react: '18.2.0',
+        'react-dom': '18.2.0',
+    },
+}
+
+const html = await buildPreview(
+    [{ path: '/index.tsx', code }],
+    '/index.tsx',
+    options,
+)
 ```
 
 #### JavaScript-Only Output
