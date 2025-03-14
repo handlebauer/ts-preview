@@ -104,7 +104,9 @@ await buildPreview(virtualFiles)
     })
 
 // React example with explicit dependencies
-await buildPreview(reactExample, '/index.tsx', dependencies)
+await buildPreview(reactExample, '/index.tsx', {
+    dependencies,
+})
     .then((html: string) => {
         console.log('\nReact Example with Explicit Dependencies:')
         console.log(html)
