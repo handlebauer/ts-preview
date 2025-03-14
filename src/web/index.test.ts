@@ -396,6 +396,39 @@ ReactDOM.render(<App />, document.getElementById('root'));`,
         expect(html).toContain('<script type="importmap">')
     })
 
+    test('buildPreview should use custom title when provided in options', async () => {
+        const simpleFiles = [
+            {
+                path: '/index.tsx',
+                code: `import React from 'react';
+import ReactDOM from 'react-dom';
+
+function App() {
+  return <div>Hello Custom Title World</div>;
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));`,
+            },
+        ]
+
+        // Using the options object with a custom title
+        const options = {
+            dependencies: {
+                react: '18.2.0',
+                'react-dom': '18.2.0',
+            },
+            title: 'My Custom App Title',
+        }
+
+        const html = await buildPreview(simpleFiles, '/index.tsx', options)
+
+        // Verify that the custom title is included in the HTML
+        expect(html).toContain('<title>My Custom App Title</title>')
+
+        // Should not contain the default title
+        expect(html).not.toContain('<title>TSX Preview</title>')
+    })
+
     test('buildPreview should work with the old API for backward compatibility', async () => {
         const simpleFiles = [
             {

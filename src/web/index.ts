@@ -11,6 +11,7 @@ export type { VirtualFile } from './types'
 export interface PreviewOptions {
     dependencies?: Record<string, string>
     tailwind?: boolean
+    title?: string
 }
 
 // Flag to track initialization state
@@ -162,7 +163,7 @@ export async function buildPreview(
 
     return generatePreviewHtml(
         bundledCode,
-        'TSX Preview',
+        options?.title || 'TSX Preview',
         importMap,
         options?.tailwind,
     )

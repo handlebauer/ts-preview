@@ -58,6 +58,7 @@ interface VirtualFile {
 interface PreviewOptions {
     dependencies?: Record<string, string> // External dependencies (package name to version)
     tailwind?: boolean // Whether to include Tailwind CSS
+    title?: string // Custom title for the HTML document
 }
 ```
 
@@ -247,6 +248,7 @@ const options = {
         'react-dom': '18.2.0',
     },
     tailwind: true, // This adds Tailwind CSS to the preview
+    title: 'Tailwind Demo', // Custom title for the HTML document
 }
 
 const html = await buildPreview(files, '/index.tsx', options)
