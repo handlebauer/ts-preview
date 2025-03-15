@@ -7,9 +7,14 @@
   <script type="importmap">
   {
     "imports": {
-      "react": "https://esm.sh/react@^19.0.0",
-      "react-dom": "https://esm.sh/react-dom@^19.0.0",
-      "react-dom/client": "https://esm.sh/react-dom@^19.0.0/client"
+      "react": "https://esm.sh/react@19.0.0",
+      "react-dom": "https://esm.sh/react-dom@19.0.0",
+      "class-variance-authority": "https://esm.sh/class-variance-authority@0.7.0",
+      "clsx": "https://esm.sh/clsx@2.0.0",
+      "tailwind-merge": "https://esm.sh/tailwind-merge@2.0.0",
+      "@radix-ui/react-slot": "https://esm.sh/@radix-ui/react-slot@1.1.0",
+      "@radix-ui/react-alert-dialog": "https://esm.sh/@radix-ui/react-alert-dialog@1.1.6",
+      "react-dom/client": "https://esm.sh/react-dom@19.0.0/client"
     }
   }
 </script>
@@ -18,18 +23,26 @@
 <body>
   <div id="root"></div>
   <script type="module">
-    // in-memory:/main.tsx
+    // in-memory:/src/main.tsx
     import React2 from "react";
     import ReactDOM from "react-dom/client";
     
-    // in-memory:/App.tsx
-    import React from "react";
+    // in-memory:/src/App.tsx
+    import React, { useState } from "react";
     function App() {
-      return /* @__PURE__ */ React.createElement("div", { className: "text-red-500" }, "Hello World with Tailwind");
+      const [count, setCount] = useState(0);
+      return /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6" }, /* @__PURE__ */ React.createElement("div", { className: "w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden transform transition-all duration-300 hover:scale-105" }, /* @__PURE__ */ React.createElement("div", { className: "p-8 flex flex-col gap-4 items-center" }, /* @__PURE__ */ React.createElement("h1", { className: "text-3xl font-bold text-gray-800 mb-4" }, "Tailwind + Shadcn Demo"), /* @__PURE__ */ React.createElement("p", { className: "text-gray-600 mb-6" }, "A simple showcase of Tailwind styling."), /* @__PURE__ */ React.createElement("div", { className: "bg-gray-100 rounded-lg p-4 mb-6" }, /* @__PURE__ */ React.createElement("p", { className: "text-gray-700 text-sm font-medium mb-2" }, "Current Count"), /* @__PURE__ */ React.createElement("div", { className: "text-4xl font-bold text-indigo-600 tracking-tight flex items-center justify-center h-16 bg-indigo-50 rounded-md" }, count)), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          className: "bg-blue-500 text-white px-4 py-2 rounded-md flex-1",
+          onClick: () => setCount(count + 1)
+        },
+        "Increment"
+      ))));
     }
     var App_default = App;
     
-    // in-memory:/main.tsx
+    // in-memory:/src/main.tsx
     var root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(
       /* @__PURE__ */ React2.createElement(React2.StrictMode, null, /* @__PURE__ */ React2.createElement(App_default, null))

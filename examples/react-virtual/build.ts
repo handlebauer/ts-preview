@@ -18,22 +18,32 @@ async function main() {
     // Define our virtual files
     const virtualFiles: VirtualFile[] = [
         {
-            path: '/App.tsx',
+            path: 'src/App.tsx',
             code: readFileContent(path.join(__dirname, 'src/App.tsx')),
         },
         {
-            path: '/main.tsx',
+            path: 'src/main.tsx',
             code: readFileContent(path.join(__dirname, 'src/main.tsx')),
         },
         {
-            path: '/package.json',
+            path: 'package.json',
             code: readFileContent(path.join(__dirname, 'package.json')),
         },
     ]
 
-    // Build the preview HTML
-    const html = await buildPreview(virtualFiles, '/main.tsx', {
+    // Build the preview HTML with specific React dependency versions
+    // Override to React 18 which is more compatible with Radix UI
+    const html = await buildPreview(virtualFiles, 'src/main.tsx', {
         tailwind: true,
+        dependencies: {
+            react: '19.0.0',
+            'react-dom': '19.0.0',
+            'class-variance-authority': '0.7.0',
+            clsx: '2.0.0',
+            'tailwind-merge': '2.0.0',
+            '@radix-ui/react-slot': '1.1.0',
+            '@radix-ui/react-alert-dialog': '1.1.6',
+        },
     })
 
     // Write the generated HTML to a file
